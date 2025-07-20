@@ -22,7 +22,7 @@ paths:
               schema:
                 type: string
                 example: '<html><body><h1>Login/Signup</h1></body></html>'
-
+  
   /signup:
     post:
       summary: Register a new user
