@@ -1,6 +1,3 @@
-use serde::de::value::EnumAccessDeserializer;
-
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct User {
     pub email: String,
