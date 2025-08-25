@@ -10,7 +10,14 @@ lazy_static! {
 
 fn set_token() -> String {
     dotenv().ok(); // Load environment variables
-    let secret = std_env::var(env::JWT_SECRET_ENV_VAR).expect("JWT_SECRET must be set.");
+    let secret = std_env::var(env::JWT_SECRET_ENV_VAR).unwrap_or_else(|_| {
+        // Provide a default test secret when JWT_SECRET is not set (e.g., in CI/test environments)
+        if cfg!(test) {
+            "test-secret-key-for-testing-only-never-use-in-production".to_string()
+        } else {
+            panic!("JWT_SECRET must be set in production environments")
+        }
+    });
     if secret.is_empty() {
         panic!("JWT_SECRET must not be empty.");
     }
