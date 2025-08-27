@@ -1,6 +1,12 @@
 use std::error::Error;
-use axum::{Json, http::StatusCode, response::{IntoResponse, Response}, routing::post, serve::Serve, Router};
-use tower_http::services::{ServeDir};
+use axum::{
+    http::{Method, StatusCode},
+    response::{IntoResponse, Response},
+    routing::post,
+    serve::Serve,
+    Json, Router,
+};
+use tower_http::{cors::CorsLayer, services::ServeDir};
 use app_state::AppState;
 use domain::AuthAPIError;
 use serde::{Deserialize, Serialize};
@@ -19,6 +25,17 @@ pub struct Application {
 
 impl Application {
     pub async fn build(app_state: AppState, address: &str) -> Result<Self, Box<dyn Error>> {
+        let allowed_origins = [
+            "http://localhost:8000".parse()?,
+            "http://134.209.112.161:8000".parse()?,
+        ];
+
+        let cors = CorsLayer::new()
+            .allow_methods([Method::GET, Method::POST])
+            // Allow cookies to be included in requests
+            .allow_credentials(true)
+            .allow_origin(allowed_origins);
+
         let router = Router::new()
             .nest_service("/", ServeDir::new("assets"))
             .route("/signup", post(routes::signup))
@@ -26,7 +43,8 @@ impl Application {
             .route("/logout", post(routes::logout))
             .route("/verify-2fa", post(routes::verify_2fa))
             .route("/verify-token", post(routes::verify_token))
-            .with_state(app_state);
+            .with_state(app_state)
+            .layer(cors);
 
         let listener = tokio::net::TcpListener::bind(address).await?;
         let address = listener.local_addr()?.to_string();
