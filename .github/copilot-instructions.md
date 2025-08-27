@@ -44,6 +44,7 @@
 - Use `#[derive()]` for common traits when possible
 - Handle all `Result` and `Option` types explicitly, provide meaningful error messages
 - Prefer static dispatch (generics) over dynamic dispatch (trait objects) unless flexibility is needed
+- Look at the existing code before suggesting changes to understand the style
 
 ## Async Code
 
