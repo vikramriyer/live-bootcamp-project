@@ -91,9 +91,13 @@ impl TestApp {
             .expect("2FA token verified successfully")
     }
 
-    pub async fn verify_token(&self) -> reqwest::Response {
+    pub async fn post_verify_token<Body>(&self, body: &Body) -> reqwest::Response 
+    where
+        Body: serde::Serialize,
+    {
         self.http_client
             .post(&format!("{}/verify-token", &self.address))
+            .json(body)
             .send()
             .await
             .expect("Token is valid")
