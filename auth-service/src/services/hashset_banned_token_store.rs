@@ -7,12 +7,12 @@ pub struct HashsetBannedTokenStore {
 }
 
 impl HashsetBannedTokenStore {
-    async fn store_tokens(&mut self, token: String, exp: usize) -> Result<(), BannedTokenStoreError> {
+    pub async fn store_tokens(&mut self, token: String, exp: usize) -> Result<(), BannedTokenStoreError> {
         self.banned_tokens.insert((token, exp));
         Ok(())
     }
 
-    async fn is_token_exists(&self, token: &str) -> Result<bool, BannedTokenStoreError> {
+    pub async fn is_token_exists(&self, token: &str) -> Result<bool, BannedTokenStoreError> {
         let exists = self.banned_tokens.iter().any(|(banned_token, _)| banned_token == token);
         Ok(exists)
     }

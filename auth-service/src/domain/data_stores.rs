@@ -31,21 +31,24 @@ pub enum UserStoreError {
     UnexpectedError,
 }
 
+#[async_trait::async_trait]
 pub trait BannedTokenStore {
     async fn store_tokens(&mut self, token: String, exp: usize) -> Result<(), BannedTokenStoreError>;
     async fn is_token_exists(&self, token: &str) -> Result<bool, BannedTokenStoreError>;
 }
 
+#[async_trait::async_trait]
 impl BannedTokenStore for HashsetBannedTokenStore {
     async fn store_tokens(&mut self, token: String, exp: usize) -> Result<(), BannedTokenStoreError> {
-        todo!();
+        self.store_tokens(token, exp).await
     }
 
     async fn is_token_exists(&self, token: &str) -> Result<bool, BannedTokenStoreError> {
-        todo!();
+        self.is_token_exists(token).await
     }
 }
 
 #[derive(Debug, PartialEq)]
 pub enum BannedTokenStoreError {
+    UnexpectedError,
 }
