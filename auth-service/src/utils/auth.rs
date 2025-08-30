@@ -3,7 +3,7 @@ use chrono::Utc;
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Validation};
 use serde::{Deserialize, Serialize};
 
-use crate::domain::email::Email;
+use crate::{domain::email::Email, app_state::BannedTokenStoreType};
 
 use super::constants::{JWT_COOKIE_NAME, JWT_SECRET};
 
@@ -57,13 +57,33 @@ fn generate_auth_token(email: &Email) -> Result<String, GenerateTokenError> {
 }
 
 // Check if JWT auth token is valid by decoding it using the JWT secret
-pub async fn validate_token(token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
-    decode::<Claims>(
+// Optionally check if token is banned when banned_store is provided
+pub async fn validate_token(
+    token: &str,
+    banned_store: Option<&BannedTokenStoreType>
+) -> Result<Claims, jsonwebtoken::errors::Error> {
+    let claims = decode::<Claims>(
         token,
         &DecodingKey::from_secret(JWT_SECRET.as_bytes()),
         &Validation::default(),
     )
-    .map(|data| data.claims)
+    .map(|data| data.claims)?;
+
+    // Check if token is banned (if banned store is provided)
+    if let Some(store) = banned_store {
+        let banned_store = store.read().await;
+        match banned_store.is_token_exists(token).await {
+            Ok(true) => return Err(jsonwebtoken::errors::Error::from(
+                jsonwebtoken::errors::ErrorKind::InvalidToken
+            )),
+            Ok(false) => {},
+            Err(_) => return Err(jsonwebtoken::errors::Error::from(
+                jsonwebtoken::errors::ErrorKind::InvalidToken
+            )),
+        }
+    }
+
+    Ok(claims)
 }
 
 // Create JWT auth token by encoding claims using the JWT secret
@@ -118,7 +138,7 @@ mod tests {
     async fn test_validate_token_with_valid_token() {
         let email = Email::parse("test@example.com".to_owned()).unwrap();
         let token = generate_auth_token(&email).unwrap();
-        let result = validate_token(&token).await.unwrap();
+        let result = validate_token(&token, None).await.unwrap();
         assert_eq!(result.sub, "test@example.com");
 
         let exp = Utc::now()
@@ -132,7 +152,7 @@ mod tests {
     #[tokio::test]
     async fn test_validate_token_with_invalid_token() {
         let token = "invalid_token".to_owned();
-        let result = validate_token(&token).await;
+        let result = validate_token(&token, None).await;
         assert!(result.is_err());
     }
 }

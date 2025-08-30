@@ -18,7 +18,7 @@ pub async fn logout(
 
     let token = cookie.value().to_owned();
 
-    match validate_token(&token).await {
+    match validate_token(&token, None).await {
         Ok(claims) => {
             // Add token to banned store
             let mut banned_store = state.banned_token_store.write().await;

@@ -7,16 +7,8 @@ pub async fn verify_token(
     State(state): State<AppState>,
     Json(request): Json<VerifyTokenRequest>
 ) -> Result<impl IntoResponse, AuthAPIError> {
-    match validate_token(&request.token).await {
-        Ok(_) => {
-            // Check if token is banned
-            let banned_store = state.banned_token_store.read().await;
-            match banned_store.is_token_exists(&request.token).await {
-                Ok(true) => Err(AuthAPIError::InvalidToken), // Token is banned
-                Ok(false) => Ok(StatusCode::OK.into_response()), // Token is valid and not banned
-                Err(_) => Err(AuthAPIError::UnexpectedError),
-            }
-        },
+    match validate_token(&request.token, Some(&state.banned_token_store)).await {
+        Ok(_) => Ok(StatusCode::OK.into_response()),
         Err(_) => Err(AuthAPIError::InvalidToken),
     }
 }
