@@ -1,5 +1,5 @@
 use auth_service::{utils::constants::JWT_COOKIE_NAME};
-use reqwest::Url;
+use reqwest::{Url, cookie::CookieStore};
 
 use crate::helpers::{TestApp, get_random_email};
 
@@ -52,9 +52,25 @@ async fn should_return_200_if_valid_jwt_cookie() {
     let response = app.post_login(&login_body).await;
     assert_eq!(response.status().as_u16(), 200);
 
+    // Get the JWT token value before logout
+    let url = &"http://127.0.0.1".parse().unwrap();
+    let cookies = app.cookie_jar.cookies(url).unwrap();
+    let jwt_cookie = cookies.to_str().unwrap();
+    let token_value = jwt_cookie
+        .split(&format!("{}=", JWT_COOKIE_NAME))
+        .nth(1)
+        .unwrap()
+        .split(';')
+        .next()
+        .unwrap();
+
     // First logout should succeed
     let response = app.logout().await;
     assert_eq!(response.status(), 200);
+
+    // Verify token was added to banned store
+    let banned_store = app.banned_token_store.read().await;
+    assert!(banned_store.is_token_exists(token_value).await.unwrap());
 }
 
 #[tokio::test]

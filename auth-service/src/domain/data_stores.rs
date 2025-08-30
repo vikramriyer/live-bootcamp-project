@@ -1,5 +1,5 @@
 use super::{User, Email, Password};
-use crate::services::HashmapUserStore;
+use crate::services::{HashmapUserStore, HashsetBannedTokenStore};
 
 #[async_trait::async_trait]
 pub trait UserStore {
@@ -28,5 +28,27 @@ pub enum UserStoreError {
     UserAlreadyExists,
     UserNotFound,
     InvalidCredentials,
+    UnexpectedError,
+}
+
+#[async_trait::async_trait]
+pub trait BannedTokenStore {
+    async fn store_tokens(&mut self, token: String, exp: usize) -> Result<(), BannedTokenStoreError>;
+    async fn is_token_exists(&self, token: &str) -> Result<bool, BannedTokenStoreError>;
+}
+
+#[async_trait::async_trait]
+impl BannedTokenStore for HashsetBannedTokenStore {
+    async fn store_tokens(&mut self, token: String, exp: usize) -> Result<(), BannedTokenStoreError> {
+        self.store_tokens(token, exp).await
+    }
+
+    async fn is_token_exists(&self, token: &str) -> Result<bool, BannedTokenStoreError> {
+        self.is_token_exists(token).await
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum BannedTokenStoreError {
     UnexpectedError,
 }
