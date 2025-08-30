@@ -1,5 +1,5 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 use axum_extra::extract::CookieJar;
 use crate::{app_state::AppState, domain::{AuthAPIError, Email, Password, UserStoreError}};
 use crate::utils::auth;
@@ -19,21 +19,26 @@ pub async fn login(
         Err(_) => return (jar, Err(AuthAPIError::InvalidCredentials)),
     };
 
-    let auth_cookie = match auth::generate_auth_cookie(&email) {
-        Ok(auth_cookie) => auth_cookie,
-        Err(_) => return (jar, Err(AuthAPIError::UnexpectedError)),
-    };
-
-    let updated_jar = jar.add(auth_cookie);
-
     let user_store = state.user_store.read().await;
     
     match user_store.validate_user(&email, &password).await {
-        Ok(_) => (updated_jar, Ok(StatusCode::OK.into_response())),
-        Err(UserStoreError::UserNotFound) | Err(UserStoreError::InvalidCredentials) => {
-            (updated_jar, Err(AuthAPIError::IncorrectCredentials))
+        Ok(_) => {
+            // Get user to check 2FA requirement
+            match user_store.get_user(&email).await {
+                Ok(user) => {
+                    if user.requires_2fa() {
+                        handle_2fa(jar).await
+                    } else {
+                        handle_no_2fa(&email, jar).await
+                    }
+                }
+                Err(_) => (jar, Err(AuthAPIError::UnexpectedError)),
+            }
         }
-        Err(_) => (updated_jar, Err(AuthAPIError::UnexpectedError)),
+        Err(UserStoreError::UserNotFound) | Err(UserStoreError::InvalidCredentials) => {
+            (jar, Err(AuthAPIError::IncorrectCredentials))
+        }
+        Err(_) => (jar, Err(AuthAPIError::UnexpectedError)),
     }
 }
 
@@ -41,4 +46,59 @@ pub async fn login(
 pub struct LoginRequest {
     pub email: String,
     pub password: String,
+}
+
+async fn handle_2fa(
+    jar: CookieJar,
+) -> (
+    CookieJar,
+    Result<(StatusCode, Json<LoginResponse>), AuthAPIError>,
+) {
+    (
+        jar,
+        Ok((
+            StatusCode::PARTIAL_CONTENT,
+            Json(LoginResponse::TwoFactorAuth(TwoFactorAuthResponse {
+                message: "2FA required".to_owned(),
+                login_attempt_id: "123456".to_owned(),
+            }))
+        ))
+    )
+}
+
+async fn handle_no_2fa(
+    email: &Email,
+    jar: CookieJar,
+) -> (
+    CookieJar,
+    Result<(StatusCode, Json<LoginResponse>), AuthAPIError>,
+) {
+    let auth_cookie = match auth::generate_auth_cookie(email) {
+        Ok(cookie) => cookie,
+        Err(_) => return (jar, Err(AuthAPIError::UnexpectedError)),
+    };
+    
+    let updated_jar = jar.add(auth_cookie);
+    
+    (
+        updated_jar,
+        Ok((StatusCode::OK, Json(LoginResponse::RegularAuth)))
+    )
+}
+
+// The login route can return 2 possible success responses.
+// This enum models each response!
+#[derive(Debug, Serialize)]
+#[serde(untagged)]
+pub enum LoginResponse {
+    RegularAuth,
+    TwoFactorAuth(TwoFactorAuthResponse),
+}
+
+// If a user requires 2FA, this JSON body should be returned!
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TwoFactorAuthResponse {
+    pub message: String,
+    #[serde(rename = "loginAttemptId")]
+    pub login_attempt_id: String,
 }
