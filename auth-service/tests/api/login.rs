@@ -1,5 +1,5 @@
 use crate::helpers::{TestApp, get_random_email};
-use auth_service::{routes::TwoFactorAuthResponse};
+use auth_service::{routes::TwoFactorAuthResponse, domain::Email};
 use auth_service::{utils::constants::JWT_COOKIE_NAME};
 
 #[tokio::test]
@@ -147,12 +147,20 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
     let response = app.post_login(&login_body).await;
     assert_eq!(response.status().as_u16(), 206);
 
-    assert_eq!(
-        response
-            .json::<TwoFactorAuthResponse>()
-            .await
-            .expect("Could not deserialize response body to TwoFactorAuthResponse")
-            .message,
-        "2FA required".to_owned()
-    );
+    let json_body = response
+        .json::<TwoFactorAuthResponse>()
+        .await
+        .expect("Could not deserialize response body to TwoFactorAuthResponse");
+    assert_eq!(json_body.message, "2FA required".to_owned());
+    
+    let email = Email::parse(random_email).expect("Failed to parse
+email");
+    let two_fa_store = app.two_fa_code_store.read().await;
+    let stored_code = two_fa_store.get_code(&email).await;
+    assert!(stored_code.is_ok(), "Login attempt ID should be 
+           + stored in 2FA code store");
+    
+    let (stored_login_attempt_id, _) = stored_code.unwrap();
+    assert_eq!(json_body.login_attempt_id, stored_login_attempt_id.as_ref());
+    
 }
