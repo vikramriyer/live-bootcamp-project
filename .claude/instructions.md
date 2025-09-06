@@ -1,5 +1,16 @@
-# Claude Instructions
+# Claude Code Instructions
 
-Please read and follow all guidelines specified in `.github/copilot-instructions.md` for this project.
+## Primary Guidelines
+**IMPORTANT**: Before any coding task, read and strictly follow ALL guidelines in `.github/copilot-instructions.md`. These are mandatory project requirements.
 
-All coding standards, design patterns, testing requirements, and implementation guidelines are defined in that file. Refer to it for every task and ensure compliance with those instructions.
+## Rust Standards
+- Write idiomatic, safe Rust code
+- Use proper error handling (`Result<T, E>`, `Option<T>`)
+- Run `cargo check`, `cargo test`, `cargo fmt`, `cargo clippy`
+- Include doc comments for public APIs
+- Avoid `unsafe` unless justified
+
+## Communication
+- Explain architectural decisions
+- Ask for clarification when requirements are unclear
+- Suggest alternatives when appropriate
