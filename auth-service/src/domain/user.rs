@@ -4,7 +4,7 @@ use crate::domain::{Email, Password};
 pub struct User {
     pub email: Email,
     password: Password,
-    requires_2fa: bool
+    pub requires_2fa: bool
 }
 
 impl User {
@@ -18,5 +18,9 @@ impl User {
 
     pub fn password(&self) -> &Password {
         &self.password
+    }
+
+    pub fn requires_2fa(&self) -> bool {
+        self.requires_2fa
     }
 }

@@ -29,6 +29,7 @@
   2. `cargo test` to run unit tests
   3. `cargo clippy -- -W clippy::all` to check for common mistakes
 - Write unit tests for new functions, aim for testing behavior not implementation
+- If tests were implemented, run them to make sure no errors and expected behavior. 
 - Use `#[cfg(test)]` modules for test code
 - Create minimal test fixtures, avoid test interdependencies
 - Mock external dependencies using traits and test doubles

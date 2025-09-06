@@ -1,5 +1,5 @@
 use auth_service::{
-    app_state::{AppState, BannedTokenStoreType}, services::{hashmap_user_store::HashmapUserStore, hashset_banned_token_store::HashsetBannedTokenStore}, utils::constants::test,
+    app_state::{AppState, BannedTokenStoreType, TwoFACodeStoreType}, services::{hashmap_user_store::HashmapUserStore, hashset_banned_token_store::HashsetBannedTokenStore, HashmapTwoFACodeStore}, utils::constants::test,
     Application,
 };
 use std::sync::Arc;
@@ -12,13 +12,15 @@ pub struct TestApp {
     pub cookie_jar: Arc<Jar>,
     pub http_client: reqwest::Client,
     pub banned_token_store: BannedTokenStoreType,
+    pub two_fa_code_store: TwoFACodeStoreType,
 }
 
 impl TestApp {
     pub async fn new() -> Self {
         let user_store = Arc::new(RwLock::new(HashmapUserStore::default()));
         let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
-        let app_state = AppState::new(user_store, banned_token_store.clone());
+        let two_fa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default()));
+        let app_state = AppState::new(user_store, banned_token_store.clone(), two_fa_code_store.clone());
 
         let app = Application::build(app_state, test::APP_ADDRESS)
             .await
@@ -43,6 +45,7 @@ impl TestApp {
             cookie_jar,
             http_client,
             banned_token_store,
+            two_fa_code_store,
         }
     }
 
