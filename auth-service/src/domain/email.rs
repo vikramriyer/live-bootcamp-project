@@ -1,3 +1,5 @@
+use serde::{Deserialize, Deserializer};
+
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Email(String);
 
@@ -33,6 +35,16 @@ impl Email {
 impl AsRef<str> for Email {
     fn as_ref(&self) -> &str {
         &self.0
+    }
+}
+
+impl<'de> Deserialize<'de> for Email {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        Email::parse(s).map_err(|_| serde::de::Error::custom("Invalid email format"))
     }
 }
 
