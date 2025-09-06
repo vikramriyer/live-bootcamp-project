@@ -1,57 +1,40 @@
 # Copilot Instructions
 
-## Code Quality & Design Patterns
-
+## Code Quality & Design
 - Follow SOLID principles and Rust idioms (ownership, borrowing, lifetimes)
-- Prefer composition over inheritance, use traits for shared behavior
-- Implement error handling with custom error types that implement `Error`, `Display`, and where applicable, `From` traits
+- Use traits for shared behavior, prefer composition over inheritance
+- Implement custom error types with `Error`, `Display`, and `From` traits
 - Use the type system to make invalid states unrepresentable
-- Apply the Repository pattern for data access, keeping database logic separate from business logic
-- Use dependency injection through constructor parameters or builder patterns
-- Prefer `Arc<dyn Trait>` over concrete types for better testability
-- Keep functions small and focused on a single responsibility
-- Use semantic types over primitives (e.g., `UserId(u32)` instead of bare `u32`)
+- Apply Repository pattern for data access, dependency injection via constructors
+- Keep functions small and focused, use semantic types over primitives
 
 ## Code Style
-
-- Write idiomatic Rust following the official style guide
-- Keep code DRY but prioritize clarity over cleverness
-- Add doc comments (`///`) for public APIs, include examples where helpful
-- Use descriptive variable names, avoid unnecessary abbreviations
-- Structure code with clear module boundaries and sensible visibility modifiers
-- Prefer iterators and functional approaches over manual loops where appropriate
-- Use `Result<T, E>` for fallible operations, avoid `unwrap()` except in tests
+- Write idiomatic Rust, prioritize clarity over cleverness
+- Add doc comments for public APIs with examples
+- Use descriptive names, clear module boundaries, appropriate visibility
+- Prefer iterators and functional approaches, use `Result<T, E>` for fallible operations
+- Avoid `unwrap()` except in tests
 
 ## Testing & Validation
+After implementing changes, automatically run:
+1. `cargo check` - verify compilation
+2. `cargo test` - run tests
+3. `cargo clippy -- -W clippy::all` - check for issues
 
-- After implementing new functionality, automatically run:
-  1. `cargo check` to verify the code compiles
-  2. `cargo test` to run unit tests
-  3. `cargo clippy -- -W clippy::all` to check for common mistakes
-- Write unit tests for new functions, aim for testing behavior not implementation
-- If tests were implemented, run them to make sure no errors and expected behavior. 
-- Use `#[cfg(test)]` modules for test code
-- Create minimal test fixtures, avoid test interdependencies
-- Mock external dependencies using traits and test doubles
-- Include both happy path and error case tests
+Write unit tests for new functions, test behavior not implementation. Use `#[cfg(test)]` modules, mock dependencies with traits, test both happy and error paths.
 
-## Implementation Guidelines
-
-- Start with the simplest working solution, then refactor if needed
-- Avoid premature optimization and over-engineering
-- Use standard library types before reaching for external crates
-- When using external crates, prefer well-maintained, widely-used options
+## Implementation
+- Start simple, refactor if needed
+- Avoid premature optimization and over-engineering  
+- Use standard library before external crates
 - Implement `Debug` for all types, `Clone` only when needed
-- Use `#[derive()]` for common traits when possible
-- Handle all `Result` and `Option` types explicitly, provide meaningful error messages
-- Prefer static dispatch (generics) over dynamic dispatch (trait objects) unless flexibility is needed
-- Look at the existing code before suggesting changes to understand the style
+- Handle all `Result`/`Option` types explicitly with meaningful errors
+- Prefer static dispatch unless flexibility needed
+- Look at existing code to understand project style
 
 ## Async Code
+- Use `async`/`await` consistently, avoid blocking in async contexts
+- Prefer `tokio` runtime, use `Arc<Mutex<T>>` for shared async state
+- Be mindful of cancellation safety
 
-- Use `async`/`await` consistently, avoid blocking operations in async contexts
-- Prefer `tokio` for async runtime when needed
-- Use `Arc<Mutex<T>>` or `Arc<RwLock<T>>` for shared state in async code
-- Be mindful of cancellation safety in async operations
-
-Do not ask for permission to run tests or checks - just run them after implementing changes and include the results in your response.
+Run tests and checks automatically after changes - include results in response.
